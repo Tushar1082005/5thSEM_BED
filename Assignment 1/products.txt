@@ -1,0 +1,5 @@
+phone
+laptop
+headphones
+keyboard
+mouse
