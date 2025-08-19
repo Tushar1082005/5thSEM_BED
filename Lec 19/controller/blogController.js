@@ -1,0 +1,75 @@
+const User = require('../model/user');
+const Blog = require('../model/blog');
+
+module.exports.postAddBlog = async(req, res) => {
+  let title = req.body.title;
+  let body = req.body.body;
+  let userId = req.body.userId;
+  let user = await User.findById(userId);
+  if(!user) {
+    return res.json({
+      success: false,
+      message: "Invalid User"
+    });
+  }
+
+  let blog={
+    title:title,
+    body:body,
+    date:Date.now(),
+    userId:user._id
+  }
+  let newBlog= new Blog(blog);
+  await newBlog.save()
+  user.blogs.push(newBlog._id);
+  await user.save();
+  res.json({
+    success:true,
+    message:"Blog added successfully",
+    data:newBlog
+  })
+}
+
+module.exports.deleteOneBlog = async(req,res) => {
+  let blogId = req.params.blogId;
+  let userId = req.body.userId;
+  let blogExist = await Blog.findById(blogId);
+  if(!blogExist) {
+    return res.json({
+      success: false,
+      message: "Blog does not exist"
+    });
+  }
+  if (blogExist.userId && blogExist.userId.toString() !== userId) {
+  return res.json({
+    success: false,
+    message: "Permission denied"
+  });
+  }
+
+  await Blog.findByIdAndDelete(blogId);
+  return res.json({
+  success: true,
+  message: "Blog deleted successfully"
+ });
+
+}
+
+module.exports.getAllBlog = async(req, res) => {
+    let allBlogs = await Blog.find();
+    res.json({
+        success: true,
+        message: "all data fetched successfully",
+        data:allBlogs
+    })
+}
+
+module.exports.getOneBlog = async(req, res) => {
+    let id = req.params.id;
+    let blog = await Blog.findById(id);
+    res.json({
+        success: true,
+        message: "Blog fetched successfully",
+        data:blog
+    })
+}
