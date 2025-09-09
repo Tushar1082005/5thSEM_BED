@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LogApp</title>
+</head>
+<body>
+  <h1>LogApp</h1>
+
+  <!-- Signup -->
+  <h2>Signup</h2>
+  <form id="signupForm">
+    <input type="text" id="signupEmail" placeholder="Email"><br>
+    <input type="password" id="signupPassword" placeholder="Password"><br>
+    <button type="submit">Signup</button>
+  </form>
+
+  <!-- Login -->
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="text" id="loginEmail" placeholder="Email"><br>
+    <input type="password" id="loginPassword" placeholder="Password"><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <!-- Add Blog -->
+  <h2>Add Blog</h2>
+  <form id="blogForm">
+    <input type="text" id="blogTitle" placeholder="Title"><br>
+    <textarea id="blogBody" placeholder="Body"></textarea><br>
+    <button type="submit">Add Blog</button>
+  </form>
+
+  <!-- Show Blogs -->
+  <h2>All Blogs</h2>
+  <button onclick="loadAllBlogs()">Load Blogs</button>
+  <div id="allBlogs"></div>
+
+  <h2>My Blogs</h2>
+  <button onclick="loadMyBlogs()">Load My Blogs</button>
+  <div id="myBlogs"></div>
+
+  <script>
+    let token = "";
+
+   // Signup
+   document.getElementById("signupForm").addEventListener("submit", async e => {
+   e.preventDefault();
+   let email = document.getElementById("signupEmail").value;
+   let password = document.getElementById("signupPassword").value;
+
+   try {
+    let res = await fetch("http://localhost:3000/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    let data = await res.json();
+    alert(data.message);
+
+    if (data.success) {
+      e.target.reset();   // ✅ clears the form after success
+    }
+   } catch (err) {
+    alert("Error: " + err.message);
+   }
+   });
+
+   // Login
+   document.getElementById("loginForm").addEventListener("submit", async e => {
+   e.preventDefault();
+   let email = document.getElementById("loginEmail").value;
+   let password = document.getElementById("loginPassword").value;
+
+   let res = await fetch("http://localhost:3000/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+   });
+   let data = await res.json();
+  
+   if (data.success) {
+    token = data.token;
+    userId = getUserIdFromToken(token);
+    alert("Login successful");
+    e.target.reset();   // ✅ clear login form
+   } else {
+    alert(data.message);
+   }
+   });
+
+
+    // Load All Blogs
+    async function loadAllBlogs() {
+      let res = await fetch("http://localhost:3000/blogs");
+      let data = await res.json();
+      let container = document.getElementById("allBlogs");
+      container.innerHTML = "";
+      data.data.forEach(b => {
+        container.innerHTML += `<p><b>${b.title}</b>: ${b.body}</p>`;
+      });
+    }
+
+    // Load My Blogs
+    async function loadMyBlogs() {
+      if (!token) return alert("Login first");
+      let res = await fetch("http://localhost:3000/blogs");
+      let data = await res.json();
+      let container = document.getElementById("myBlogs");
+      container.innerHTML = "";
+      data.data.forEach(b => {
+      if (b.userId === userId) {  // ✅ only show your blogs
+        container.innerHTML += `<p><b>${b.title}</b>: ${b.body}</p>`;
+      }
+      });
+    }
+
+    // Extract userId from JWT token
+    function getUserIdFromToken(token) {
+    try {
+    let payload = JSON.parse(atob(token.split(".")[1])); 
+    return payload.userId;   // our backend puts userId in token
+    } catch {
+     return null;
+    }
+   } 
+
+  </script>
+</body>
+</html>
